@@ -1,20 +1,25 @@
 import codecs
-from nltk.tokenize import word_tokenize
+import urllib.error
+
+#from nltk.tokenize import word_tokenize
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
 def formatHtml(link):
     url = link
-    page = urlopen(url)
+
+    try:
+        page = urlopen(url)
+    except (urllib.error.HTTPError,urllib.error.URLError):
+        return ""
     htmlBytes = page.read()
     try:
         html = htmlBytes.decode("utf-8")
     except UnicodeDecodeError:
-        pass
-    try:
-        htmlSoup = BeautifulSoup(html, "html.parser")
-    except UnboundLocalError:
-        pass
+        html = htmlBytes.decode("iso-8859-2")
+
+    htmlSoup = BeautifulSoup(html, "html.parser")
+
     return htmlSoup
 
 def getlAllLinks(mainSite):
@@ -24,19 +29,45 @@ def getlAllLinks(mainSite):
     return links
 
 def formatSubDomains(links):
-    prettifiedSubdomains = []
+    formatedSubdomains = []
     for link in links:
-        prettifiedSite = formatHtml(link)
-        prettifiedSubdomains.append(prettifiedSite)
-    return prettifiedSubdomains
+        formated = formatHtml(link)
+        formatedSubdomains.append(formated)
+    return formatedSubdomains
+
+
+def filterLinks(links):
+    filteredLinks = []
+    for link in links:
+        if link != "javascript:;":
+            filteredLinks.append(link)
+    return filteredLinks
+
+def searchTitles(term,titles):
+    for title in titles:
+        if title.contains(term):
+            print(title)
 
 if __name__ == "__main__":
+    term = "Gyurcsány"
     origoMain = formatHtml("https://www.origo.hu/index.html")
+    #print(origoMain)
+    #title = origoMain.find("title")
+    #print(title.string)
     origoLinks = getlAllLinks(origoMain)
-    origoSubDomains = formatSubDomains(origoLinks)
+    origoFilteredLinks = filterLinks(origoLinks)
+    origoSubDomains = formatSubDomains(origoFilteredLinks)
+    gyurcsanyCnt = 0
+    pageTitles = []
     for subdomain in origoSubDomains:
-        print(subdomain.get_text())
+        title = subdomain.find("title")
+        if not pageTitles.__contains__(title):
+            pageTitles.append(title)
 
+    for title in pageTitles:
+        if str(title).__contains__(term):
+            gyurcsanyCnt += 1
+    print(gyurcsanyCnt)
 """
 origoUrl = "https://www.origo.hu/index.html"
 origoPage = urlopen(origoUrl)
