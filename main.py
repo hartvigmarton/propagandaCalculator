@@ -1,26 +1,12 @@
 import codecs
 import urllib.error
-
+import streamlit
 #from nltk.tokenize import word_tokenize
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
-def formatHtml(link):
-    url = link
 
-    try:
-        page = urlopen(url)
-    except (urllib.error.HTTPError,urllib.error.URLError):
-        return ""
-    htmlBytes = page.read()
-    try:
-        html = htmlBytes.decode("utf-8")
-    except UnicodeDecodeError:
-        html = htmlBytes.decode("iso-8859-2")
 
-    htmlSoup = BeautifulSoup(html, "html.parser")
-
-    return htmlSoup
 
 def getlAllLinks(mainSite):
     links = []
@@ -36,63 +22,90 @@ def formatSubDomains(links):
     return formatedSubdomains
 
 
-def filterLinks(links):
-    filteredLinks = []
-    for link in links:
-        if link != "javascript:;":
-            filteredLinks.append(link)
-    return filteredLinks
+def filterLinks(websiteLinks,websiteList):
+    websiteIndex = 0
+    for key in websiteLinks:
+        filteredLinks = set()
+        for link in websiteLinks[key]:
+            if websiteList[websiteIndex] in link:
+                filteredLinks.add(link)
+        websiteIndex += 1
+        websiteLinks[key] = filteredLinks
+    return websiteLinks
+
 
 def searchTitles(term,titles):
     for title in titles:
         if title.contains(term):
             print(title)
+            
+
+
+def storeLinks(websites):
+    websiteLinks = {}
+    for website in websites:
+        websiteTitle = website.find("title")
+        websiteLinks[websiteTitle.string] = getlAllLinks(website)
+    return websiteLinks
+
+def formatHtml(link):
+    url = link
+
+    try:
+        page = urlopen(url)
+    except (urllib.error.HTTPError,urllib.error.URLError,ValueError):
+        return ""
+    htmlBytes = page.read()
+    try:
+        html = htmlBytes.decode("utf-8")
+    except UnicodeDecodeError:
+        html = htmlBytes.decode("iso-8859-2")
+
+    htmlSoup = BeautifulSoup(html, "html.parser")
+
+    return htmlSoup
+def selectWebSites(indexpages):
+    formatedIndices = []
+    for indexpage in indexpages:
+        index = formatHtml(indexpage)
+        formatedIndices.append(index)
+    return formatedIndices
+
 
 if __name__ == "__main__":
+    websiteList = ["https://www.origo.hu","https://444.hu"]
+    websites = selectWebSites(websiteList)
     term = "Gyurcsány"
-    origoMain = formatHtml("https://www.origo.hu/index.html")
-    #print(origoMain)
-    #title = origoMain.find("title")
-    #print(title.string)
-    origoLinks = getlAllLinks(origoMain)
-    origoFilteredLinks = filterLinks(origoLinks)
-    origoSubDomains = formatSubDomains(origoFilteredLinks)
-    gyurcsanyCnt = 0
-    pageTitles = []
-    for subdomain in origoSubDomains:
-        title = subdomain.find("title")
-        if not pageTitles.__contains__(title):
-            pageTitles.append(title)
+    websiteLinks = storeLinks(websites)
+    websiteLinks = filterLinks(websiteLinks,websiteList)
+    print(websiteLinks)
 
-    for title in pageTitles:
-        if str(title).__contains__(term):
-            gyurcsanyCnt += 1
-    print(gyurcsanyCnt)
+    """"
+    for key in websiteLinks:
+        #print("the key is " + key)
+        #print(websiteLinks[key])
+        filteredLinks = set()
+        for link in websiteLinks[key]:
+            if websiteList[websiteIndex] in link:
+                #print ("https://www." + key.lower() + ".hu",link)
+                filteredLinks.add(link)
+        websiteIndex += 1
+        websiteLinks[key] = filteredLinks
+        print("filtered links for" + key + ": ")
+        for link in websiteLinks[key]:
+            print(link)
+
+    #websiteContent = {}
+   
+    for key in websiteLinks:
+        for link in websiteLinks[key]:
+            if  "origo" not in link:
+                print(link)
+
+
+
+    for key in websiteContent:
+        print(key)
+        print(websiteContent[key])
 """
-origoUrl = "https://www.origo.hu/index.html"
-origoPage = urlopen(origoUrl)
-htmlBytes = origoPage.read()
-html = htmlBytes.decode("utf-8")
-origoLinks = []
-htmlSoup = BeautifulSoup(html,"html.parser")
 
-for link in htmlSoup.find_all('a'):
-    origoLinks.append(link.get('href'))
-
-
-
-
-
-htmlFile = codecs.open("ORIGO.html", "r", "utf-8")
-soup = BeautifulSoup(htmlFile, 'html.parser')
-stringSoup = str(soup)
-token2 = word_tokenize(stringSoup)
-
-fletoCnt = 0
-for gyurcsany in token2:
-    if gyurcsany.__contains__("Orbán"):
-        fletoCnt += 1
-        print(gyurcsany)
-
-print(fletoCnt)
-"""
