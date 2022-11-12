@@ -71,14 +71,49 @@ def selectWebSites(indexpages):
         formatedIndices.append(index)
     return formatedIndices
 
+def getTitlesWithTerm(term,websiteLinks):
+    links = {}
+    for key in websiteLinks:
+        titlesWithTerm = []
+        for link in websiteLinks[key]:
+            formatedPage = formatHtml(link)
+            pageTitle = formatedPage.find("title")
+            #print(term, pageTitle.string)
+            if term in pageTitle.string:
+                titlesWithTerm.append(pageTitle.string)
+        links[key] = titlesWithTerm
+            #print(link)
+    return links
+
+def printTitlesWithTerm(term,websiteLinks):
+    for key in websiteLinks:
+        for link in websiteLinks[key]:
+            formatedPage = formatHtml(link)
+            pageTitle = formatedPage.find("title")
+            if term in pageTitle.string:
+                print(key, pageTitle.string)
+
+
+def getNrTermsPerPage(titlesWithTerm):
+    nrTermPerPage = {}
+    for key in titlesWithTerm:
+        nrTerm = 0
+        for title in titlesWithTerm[key]:
+            nrTerm += 1
+        nrTermPerPage[key] = nrTerm
+    return nrTermPerPage
 
 if __name__ == "__main__":
     websiteList = ["https://www.origo.hu","https://444.hu"]
     websites = selectWebSites(websiteList)
-    term = "Gyurcsány"
+    term = "Orbán"
     websiteLinks = storeLinks(websites)
     websiteLinks = filterLinks(websiteLinks,websiteList)
-    print(websiteLinks)
+    titlesWithTerm = getTitlesWithTerm(term,websiteLinks)
+    nrTermPerPage = getNrTermsPerPage(titlesWithTerm)
+
+    #print(titlesWithTerm)
+    #print(nrTermPerPage)
 
     """"
     for key in websiteLinks:
